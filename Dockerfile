@@ -1,4 +1,4 @@
-FROM python:3.9-alpine3.13
+FROM python:3.8-alpine
 
 LABEL Maintainer =  "jbk878"
 
@@ -12,16 +12,21 @@ EXPOSE 8000
 
 
 ARG DEV=false
-
-
-
+RUN sed -i 's/https/http/' /etc/apk/repositories
+RUN apk add curl
+RUN apk add --update --no-cache --virtual .tmp gcc libc-dev linux-headers
 RUN python -m venv /py && \
     /py/bin/pip install --upgrade pip && \
+    apk add --update --no-cache postgresql-client && \
+    apk add --update --no-cache --virtual .tmp-build-deps \
+      build-base postgresql-dev musl-dev && \
     /py/bin/pip install -r /tmp/requirements.txt && \
+
     if [ $DEV="true" ]; \
     then /py/bin/pip install -r /tmp/requirements.dev.txt ;\
     fi &&\
     rm -rf  /tmp && \
+    apk del .tmp-build-deps && \
     adduser \
       --disabled-password \
       --no-create-home \
